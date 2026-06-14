@@ -177,3 +177,163 @@ isMyWin(id){
 ^Right::#^Right
 ^Up::#^Left
 ^Down::#^Right
+; ============================================
+; Emacs-like Keybindings for Wiki.js
+; AutoHotkey v2
+; ============================================
+
+#HotIf WinActive("Wiki.js") || WinActive("ahk_exe notepad.exe")
+
+; --------------------------------------------
+; Kill-ring / Yank / Yank-pop
+; --------------------------------------------
+global KillRing := []
+global KillIndex := 1
+global LastCommand := ""
+
+AddKill(text) {
+    global KillRing, LastCommand
+    if (LastCommand = "kill" && KillRing.Length > 0)
+        KillRing[1] := KillRing[1] . text
+    else
+        KillRing.InsertAt(1, text)
+    LastCommand := "kill"
+}
+
+CopyText() {
+    A_Clipboard := ""
+    Send "^c"
+    if !ClipWait(0.3)
+        return ""
+    return A_Clipboard
+}
+
+ResetCommand() {
+    global LastCommand
+    LastCommand := ""
+}
+
+; --------------------------------------------
+; Kill 系（mark-set / C-w は削除）
+; --------------------------------------------
+^k::{ ; 行末まで kill
+    Send "+{End}"
+    text := CopyText()
+    if (text != "")
+        AddKill(text)
+    Send "{Delete}"
+}
+
+!d::{ ; 単語 kill
+    Send "^+{Right}"
+    text := CopyText()
+    if (text != "")
+        AddKill(text)
+    Send "{Delete}"
+}
+
+!Backspace::{ ; 前の単語 kill
+    Send "^+{Left}"
+    text := CopyText()
+    if (text != "")
+        AddKill(text)
+    Send "{Delete}"
+}
+
+; --------------------------------------------
+; Yank 系
+; --------------------------------------------
+^y::{ ; yank
+    global KillRing, KillIndex, LastCommand
+    if (KillRing.Length = 0)
+        return
+    SendText KillRing[KillIndex]
+    LastCommand := "yank"
+}
+
+!y::{ ; yank-pop
+    global KillRing, KillIndex, LastCommand
+    if (LastCommand != "yank")
+        return
+    KillIndex := (KillIndex >= KillRing.Length) ? 1 : KillIndex + 1
+    Send "^z"
+    SendText KillRing[KillIndex]
+    LastCommand := "yank"
+}
+
+; --------------------------------------------
+; Emacs-like Cursor / Edit Operations
+; --------------------------------------------
+^f::{
+    ResetCommand()
+    Send "{Right}"
+}
+
+^b::{
+    ResetCommand()
+    Send "{Left}"
+}
+
+^n::{
+    ResetCommand()
+    Send "{Down}"
+}
+
+^p::{
+    ResetCommand()
+    Send "{Up}"
+}
+
+^a::{
+    ResetCommand()
+    Send "{Home}"
+}
+
+^e::{
+    ResetCommand()
+    Send "{End}"
+}
+
+^d::{
+    ResetCommand()
+    Send "{Delete}"
+}
+
+^r::{
+    ResetCommand()
+    Send "^f"
+}
+
+^/::{
+    ResetCommand()
+    Send "^z"
+}
+
+^g::{
+    ResetCommand()
+    Send "{Esc}"
+}
+
+; ---- C-m = Enter ----
+^m::{
+    ResetCommand()
+    SendEvent "{Enter}"
+}
+
+; ---- M-< / M-> ----
+!<::{
+    ResetCommand()
+    Send "^Home"
+}
+
+!>::{
+    ResetCommand()
+    Send "^End"
+}
+; ---- C-v = PageDown（Emacs と同じ）----
+^v::{
+    ResetCommand()
+    Send "{PgDn}"
+}
+
+#HotIf
