@@ -330,10 +330,5 @@ ResetCommand() {
     ResetCommand()
     Send "^End"
 }
-; ---- C-v = PageDown（Emacs と同じ）----
-^v::{
-    ResetCommand()
-    Send "{PgDn}"
-}
 
 #HotIf
